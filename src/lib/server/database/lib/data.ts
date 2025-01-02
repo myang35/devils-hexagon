@@ -1,1 +1,3 @@
-export const data: any = {};
+export const data: any = {
+	games: {}
+};

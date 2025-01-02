@@ -1,6 +1,9 @@
 import { data } from '../../data';
 
 export const gameRouter = {
+	get: async (id: string) => {
+		return data.games[id];
+	},
 	create: async () => {
 		const id = (() => {
 			const charList = 'ABCDEFHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -14,7 +17,7 @@ export const gameRouter = {
 
 		const game = { id };
 
-		data.game = game;
+		data.games[id] = game;
 
 		return game;
 	}
