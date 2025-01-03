@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { NamedTimeout, wait } from '$lib/util-basic';
+	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
 	import HexSlot from './components/hex-slot.svelte';
 
 	const { game }: { game: { id: string } } = $props();
@@ -12,6 +12,7 @@
 	let showTimer = $state(false);
 	let target = $state(0);
 	let showTarget = $state(false);
+	let isPlaying = $state(false);
 
 	function onSlotClick(index: number) {
 		if (slots[index].isSelected()) {
@@ -56,7 +57,7 @@
 			);
 
 			NamedTimeout.set(
-				'resetMessage',
+				'resetResponseMessage',
 				() => {
 					message = prevMessage;
 				},
@@ -66,6 +67,7 @@
 	}
 
 	async function onStartClick() {
+		isPlaying = true;
 		showTarget = false;
 		slots.forEach((slot) => {
 			slot.hide();
@@ -95,14 +97,14 @@
 		});
 
 		message = 'Ready';
-		await wait(1000);
+		await wait(1);
 
 		message = 'Set';
-		await wait(1000);
+		await wait(1);
 
 		message = 'Memorize!';
 		slots.forEach((slot) => slot.show());
-		await wait(1000);
+		await wait(1);
 		await startTimer(3);
 
 		message = 'Select 3 numbers';
@@ -111,9 +113,10 @@
 			slot.hide();
 			slot.enable();
 		});
+		await wait(1);
 		await startTimer(20);
 
-		NamedTimeout.clear('resetMessage');
+		NamedTimeout.clear('resetResponseMessage');
 
 		message = 'Game Over!';
 		slots.forEach((slot) => {
@@ -122,29 +125,57 @@
 		});
 	}
 
+	async function wait(seconds: number) {
+		return new Promise<void>((resolve) => {
+			NamedTimeout.set('wait', () => resolve(), seconds * 1000);
+		});
+	}
+
 	async function startTimer(seconds: number) {
 		showTimer = true;
 		timer = seconds;
 
 		return new Promise<void>((resolve) => {
-			const intervalId = setInterval(() => {
-				if (timer <= 0) {
-					showTimer = false;
-					clearInterval(intervalId);
-					resolve();
-				}
-				timer--;
-			}, 1000);
+			NamedInterval.set(
+				'timer',
+				() => {
+					if (timer <= 0) {
+						showTimer = false;
+						NamedInterval.clear('timer');
+						resolve();
+					}
+					timer--;
+				},
+				1000
+			);
 		});
+	}
+
+	function reset() {
+		isPlaying = false;
+		showTarget = false;
+		showTimer = false;
+		message = '';
+		slots.forEach((slot) => {
+			slot.hide();
+			slot.disable();
+		});
+		NamedTimeout.clear('resetResponseMessage');
+		NamedTimeout.clear('wait');
+		NamedInterval.clear('timer');
 	}
 </script>
 
 <div class="flex flex-col items-center gap-4">
 	<h1>Game ID: {game.id}</h1>
 
-	<button class="w-min rounded border border-black/50 px-2 py-1" onclick={onStartClick}
-		>Start</button
-	>
+	{#if isPlaying}
+		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={reset}>Stop</button>
+	{:else}
+		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={onStartClick}
+			>Start</button
+		>
+	{/if}
 
 	<div class="flex flex-col items-center">
 		<div class="flex gap-4">
@@ -178,7 +209,7 @@
 		</div>
 	</div>
 
-	<span class="text-5xl">{message}</span>
+	<span class="text-3xl">{message}</span>
 
 	{#if showTarget}
 		<span class="text-5xl">Target: {target}</span>
