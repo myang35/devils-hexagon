@@ -13,14 +13,14 @@
 	let showTarget = $state(false);
 
 	function onSlotClick(index: number) {
-		if (slots[index].isHighlighted()) {
+		if (slots[index].isSelected()) {
 			const removeIndex = clickedIndexes.findIndex((value) => value === index);
 			clickedIndexes.splice(removeIndex, 1);
 		} else {
 			clickedIndexes.push(index);
 		}
 
-		slots[index].highlight();
+		slots[index].select();
 
 		if (clickedIndexes.length === 3) {
 			let sum = 0;
@@ -28,15 +28,17 @@
 				sum += slots[i].getValue();
 			});
 
+			const prevMessage = message;
+
 			if (sum === target) {
 				message = 'Correct!';
 			} else {
 				message = 'Wrong!';
 			}
 			setTimeout(() => {
-				message = '...';
+				message = prevMessage;
 				clickedIndexes.forEach((i) => {
-					slots[i].highlight();
+					slots[i].select();
 				});
 				clickedIndexes = [];
 			}, 1000);
@@ -45,7 +47,10 @@
 
 	async function onStartClick() {
 		showTarget = false;
-		slots.forEach((slot) => slot.hide());
+		slots.forEach((slot) => {
+			slot.hide();
+			slot.disable();
+		});
 
 		const valuesForTarget = {
 			6: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4],
@@ -78,15 +83,21 @@
 		message = 'Memorize!';
 		slots.forEach((slot) => slot.show());
 		await wait(1000);
-		await startTimer(30);
+		await startTimer(3);
 
-		message = '...';
+		message = 'Select 3 numbers';
 		showTarget = true;
-		slots.forEach((slot) => slot.hide());
-		await startTimer(90);
+		slots.forEach((slot) => {
+			slot.hide();
+			slot.enable();
+		});
+		await startTimer(9);
 
 		message = 'Game Over!';
-		slots.forEach((slot) => slot.show());
+		slots.forEach((slot) => {
+			slot.show();
+			slot.disable();
+		});
 	}
 
 	async function startTimer(seconds: number) {

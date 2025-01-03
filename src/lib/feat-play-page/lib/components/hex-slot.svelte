@@ -11,8 +11,9 @@
 	} = $props();
 
 	let value = $state(0);
-	let highlighted = $state(false);
+	let selected = $state(false);
 	let hidden = $state(true);
+	let disabled = $state(true);
 
 	export function setValue(newValue: number) {
 		value = newValue;
@@ -22,12 +23,12 @@
 		return value;
 	}
 
-	export function highlight() {
-		highlighted = !highlighted;
+	export function select() {
+		selected = !selected;
 	}
 
-	export function isHighlighted() {
-		return highlighted;
+	export function isSelected() {
+		return selected;
 	}
 
 	export function show() {
@@ -37,14 +38,23 @@
 	export function hide() {
 		hidden = true;
 	}
+
+	export function enable() {
+		disabled = false;
+	}
+
+	export function disable() {
+		disabled = true;
+	}
 </script>
 
 <button
 	{onclick}
+	{disabled}
 	class={{
 		'flex h-20 w-20 items-center justify-center rounded-full border border-black text-5xl': true,
-		'bg-red-500/50': highlighted,
-		'hover:bg-red-500/10': !highlighted
+		'bg-red-500/50': selected,
+		'hover:bg-red-500/10': !selected && !disabled
 	}}
 >
 	{#if hidden}
