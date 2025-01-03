@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
+	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
+	import Fa from 'svelte-fa';
 	import HexSlot from './components/hex-slot.svelte';
 
 	const { game }: { game: { id: string } } = $props();
@@ -7,12 +9,15 @@
 	let slots: HexSlot[] = [];
 	let clickedIndexes = new Set<number>();
 	let foundSolutions: Set<number>[] = [];
+	let isPlaying = $state(false);
 	let message = $state('');
 	let timer = $state(0);
 	let showTimer = $state(false);
 	let target = $state(0);
 	let showTarget = $state(false);
-	let isPlaying = $state(false);
+	let showCorrect = $state(false);
+	let showWrong = $state(false);
+	let wrongMessage = $state('');
 
 	function onSlotClick(index: number) {
 		if (slots[index].isSelected()) {
@@ -36,13 +41,15 @@
 					foundSolution.isSubsetOf(clickedIndexes)
 				);
 				if (alreadyFound) {
-					message = 'Already found!';
+					wrongMessage = 'Already Found';
+					showWrong = true;
 				} else {
 					foundSolutions.push(new Set(clickedIndexes));
-					message = 'Correct!';
+					showCorrect = true;
 				}
 			} else {
-				message = 'Wrong!';
+				wrongMessage = '';
+				showWrong = true;
 			}
 
 			NamedTimeout.set(
@@ -52,14 +59,8 @@
 						slots[i].select();
 					});
 					clickedIndexes.clear();
-				},
-				1000
-			);
-
-			NamedTimeout.set(
-				'resetResponseMessage',
-				() => {
-					message = prevMessage;
+					showCorrect = false;
+					showWrong = false;
 				},
 				1000
 			);
@@ -105,24 +106,24 @@
 		message = 'Memorize!';
 		slots.forEach((slot) => slot.show());
 		await wait(1);
-		await startTimer(3);
+		await startTimer(1);
 
-		message = 'Select 3 numbers';
+		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		slots.forEach((slot) => {
 			slot.hide();
 			slot.enable();
 		});
-		await wait(1);
+		await wait(3);
 		await startTimer(20);
-
-		NamedTimeout.clear('resetResponseMessage');
 
 		message = 'Game Over!';
 		slots.forEach((slot) => {
 			slot.show();
 			slot.disable();
 		});
+
+		isPlaying = false;
 	}
 
 	async function wait(seconds: number) {
@@ -160,7 +161,6 @@
 			slot.hide();
 			slot.disable();
 		});
-		NamedTimeout.clear('resetResponseMessage');
 		NamedTimeout.clear('wait');
 		NamedInterval.clear('timer');
 	}
@@ -177,7 +177,20 @@
 		>
 	{/if}
 
-	<div class="flex flex-col items-center">
+	<div class="relative flex flex-col items-center">
+		{#if showCorrect}
+			<Fa icon={faCheck} class="absolute inset-0 m-auto text-[20rem] text-green-500/80" />
+		{/if}
+		{#if showWrong}
+			<Fa icon={faX} class="absolute inset-0 m-auto text-[20rem] text-red-500/80" />
+			{#if wrongMessage}
+				<span
+					class="absolute inset-0 m-auto h-fit w-fit rounded border border-red-700 bg-red-100/90 px-2 py-1 text-5xl text-red-700"
+					>{wrongMessage}</span
+				>
+			{/if}
+		{/if}
+
 		<div class="flex gap-4">
 			<HexSlot bind:this={slots[0]} onclick={() => onSlotClick(0)}>A</HexSlot>
 			<HexSlot bind:this={slots[1]} onclick={() => onSlotClick(1)}>B</HexSlot>
@@ -209,10 +222,13 @@
 		</div>
 	</div>
 
-	<span class="text-3xl">{message}</span>
+	<span class="text-center text-3xl">{message}</span>
 
 	{#if showTarget}
-		<span class="text-5xl">Target: {target}</span>
+		<div class="flex flex-col items-center rounded border border-black px-4 py-2">
+			<span class="text-xl">Target:</span>
+			<span class="text-5xl">{target}</span>
+		</div>
 	{/if}
 
 	{#if showTimer}
