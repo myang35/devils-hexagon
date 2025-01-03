@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { wait } from '$lib/util-basic';
+	import { NamedTimeout, wait } from '$lib/util-basic';
 	import HexSlot from './components/hex-slot.svelte';
 
 	const { game }: { game: { id: string } } = $props();
 
 	let slots: HexSlot[] = [];
-	let clickedIndexes: number[] = [];
+	let clickedIndexes = new Set<number>();
+	let foundSolutions: Set<number>[] = [];
 	let message = $state('');
 	let timer = $state(0);
 	let showTimer = $state(false);
@@ -14,15 +15,14 @@
 
 	function onSlotClick(index: number) {
 		if (slots[index].isSelected()) {
-			const removeIndex = clickedIndexes.findIndex((value) => value === index);
-			clickedIndexes.splice(removeIndex, 1);
+			clickedIndexes.delete(index);
 		} else {
-			clickedIndexes.push(index);
+			clickedIndexes.add(index);
 		}
 
 		slots[index].select();
 
-		if (clickedIndexes.length === 3) {
+		if (clickedIndexes.size === 3) {
 			let sum = 0;
 			clickedIndexes.forEach((i) => {
 				sum += slots[i].getValue();
@@ -31,17 +31,37 @@
 			const prevMessage = message;
 
 			if (sum === target) {
-				message = 'Correct!';
+				const alreadyFound = foundSolutions.some((foundSolution) =>
+					foundSolution.isSubsetOf(clickedIndexes)
+				);
+				if (alreadyFound) {
+					message = 'Already found!';
+				} else {
+					foundSolutions.push(new Set(clickedIndexes));
+					message = 'Correct!';
+				}
 			} else {
 				message = 'Wrong!';
 			}
-			setTimeout(() => {
-				message = prevMessage;
-				clickedIndexes.forEach((i) => {
-					slots[i].select();
-				});
-				clickedIndexes = [];
-			}, 1000);
+
+			NamedTimeout.set(
+				'clearSelectedSlots',
+				() => {
+					clickedIndexes.forEach((i) => {
+						slots[i].select();
+					});
+					clickedIndexes.clear();
+				},
+				1000
+			);
+
+			NamedTimeout.set(
+				'resetMessage',
+				() => {
+					message = prevMessage;
+				},
+				1000
+			);
 		}
 	}
 
@@ -91,7 +111,9 @@
 			slot.hide();
 			slot.enable();
 		});
-		await startTimer(9);
+		await startTimer(20);
+
+		NamedTimeout.clear('resetMessage');
 
 		message = 'Game Over!';
 		slots.forEach((slot) => {
