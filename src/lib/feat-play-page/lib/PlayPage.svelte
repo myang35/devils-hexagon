@@ -74,6 +74,7 @@
 			slot.hide();
 			slot.disable();
 		});
+		foundSolutions = [];
 
 		const valuesForTarget = {
 			6: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4],
@@ -106,7 +107,7 @@
 		message = 'Memorize!';
 		slots.forEach((slot) => slot.show());
 		await wait(1);
-		await startTimer(1);
+		await startTimer(30);
 
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
@@ -115,7 +116,7 @@
 			slot.enable();
 		});
 		await wait(3);
-		await startTimer(20);
+		await startTimer(90);
 
 		message = 'Game Over!';
 		slots.forEach((slot) => {
