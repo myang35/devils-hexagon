@@ -34,8 +34,6 @@
 				sum += slots[i].getValue();
 			});
 
-			const prevMessage = message;
-
 			if (sum === target) {
 				const alreadyFound = foundSolutions.some((foundSolution) =>
 					foundSolution.isSubsetOf(clickedIndexes)
