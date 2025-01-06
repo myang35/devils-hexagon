@@ -3,7 +3,7 @@
 
 	const { onSlotClick }: { onSlotClick?: (index: number) => void } = $props();
 
-	let slots: HexSlot[] = [];
+	let slots: HexSlot[] = $state([]);
 
 	export function getSlots() {
 		return slots;
