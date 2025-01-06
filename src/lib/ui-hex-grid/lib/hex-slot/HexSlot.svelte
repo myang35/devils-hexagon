@@ -52,7 +52,7 @@
 	{onclick}
 	{disabled}
 	class={{
-		'flex h-20 w-20 items-center justify-center rounded-full border border-black text-5xl': true,
+		'flex size-12 items-center justify-center rounded-full border border-black text-2xl sm:h-20 sm:w-20 sm:text-5xl': true,
 		'bg-red-500/50': selected,
 		'hover:bg-red-500/10': !selected && !disabled
 	}}

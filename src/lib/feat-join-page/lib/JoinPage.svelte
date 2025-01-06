@@ -1,13 +1,101 @@
 <script lang="ts">
-	const { game } = $props();
+	import type { Game } from '$lib/server/database';
+	import { HexGrid } from '$lib/ui-hex-grid';
+	import { NamedTimeout } from '$lib/util-basic';
+	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
+	import Fa from 'svelte-fa';
 
-	function onAnswerClick() {}
+	const { game }: { game: Game } = $props();
+
+	let hexGrid: HexGrid;
+	let clickedIndexes = new Set<number>();
+	let foundSolutions: Set<number>[] = [];
+	let target = $state(0);
+	let isAnswering = $state(false);
+	let showCorrect = $state(false);
+	let showWrong = $state(false);
+	let wrongMessage = $state('');
+
+	function onAnswerClick() {
+		isAnswering = true;
+
+		setTimeout(() => hexGrid.enableSlots());
+	}
+
+	function onSlotClick(index: number) {
+		const slots = hexGrid.getSlots();
+		const clickedSlot = slots[index];
+
+		if (clickedSlot.isSelected()) {
+			clickedIndexes.delete(index);
+		} else {
+			clickedIndexes.add(index);
+		}
+
+		clickedSlot.select();
+
+		if (clickedIndexes.size === 3) {
+			let sum = 0;
+			clickedIndexes.forEach((i) => {
+				sum += slots[i].getValue();
+			});
+
+			if (sum === target) {
+				const alreadyFound = foundSolutions.some((foundSolution) =>
+					foundSolution.isSubsetOf(clickedIndexes)
+				);
+				if (alreadyFound) {
+					wrongMessage = 'Already Found';
+					showWrong = true;
+				} else {
+					foundSolutions.push(new Set(clickedIndexes));
+					showCorrect = true;
+				}
+			} else {
+				wrongMessage = '';
+				showWrong = true;
+			}
+
+			NamedTimeout.set(
+				'clearSelectedSlots',
+				() => {
+					clickedIndexes.forEach((i) => {
+						slots[i].select();
+					});
+					clickedIndexes.clear();
+					showCorrect = false;
+					showWrong = false;
+				},
+				1000
+			);
+		}
+	}
 </script>
 
 <div class="flex flex-col items-center gap-4 p-4">
-	<span class="text-center">Game ID: 07057S</span>
-	<button
-		class="h-96 w-full rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
-		onclick={onAnswerClick}>Answer</button
-	>
+	<span class="text-center">Game ID: {game.id}</span>
+
+	{#if isAnswering}
+		<div class="relative flex flex-col items-center">
+			{#if showCorrect}
+				<Fa icon={faCheck} class="absolute inset-0 m-auto text-[20rem] text-green-500/80" />
+			{/if}
+			{#if showWrong}
+				<Fa icon={faX} class="absolute inset-0 m-auto text-[20rem] text-red-500/80" />
+				{#if wrongMessage}
+					<span
+						class="absolute inset-0 m-auto h-fit w-fit rounded border border-red-700 bg-red-100/90 px-2 py-1 text-5xl text-red-700"
+						>{wrongMessage}</span
+					>
+				{/if}
+			{/if}
+
+			<HexGrid bind:this={hexGrid} {onSlotClick} />
+		</div>
+	{:else}
+		<button
+			class="h-96 w-full rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
+			onclick={onAnswerClick}>Answer</button
+		>
+	{/if}
 </div>

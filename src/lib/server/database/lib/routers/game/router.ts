@@ -1,8 +1,9 @@
 import { data } from '../../data';
+import type { Game } from '../../types/game';
 
 export const gameRouter = {
 	get: async (id: string) => {
-		return data.games[id];
+		return data.games[id] as Game | null;
 	},
 	create: async () => {
 		const id = (() => {
@@ -15,7 +16,7 @@ export const gameRouter = {
 			return result;
 		})();
 
-		const game = { id };
+		const game: Game = { id };
 
 		data.games[id] = game;
 
