@@ -1,25 +1,15 @@
-import { data } from '../../data';
-import type { Game } from '../../types/game';
+import { data } from '$lib/server/data';
+import { Game } from '$lib/server/models';
 
 export const gameRouter = {
 	get: async (id: string) => {
-		return data.games[id] as Game | null;
+		const game = data.games[id];
+		if (!game) return null;
+		return game;
 	},
 	create: async () => {
-		const id = (() => {
-			const charList = 'ABCDEFHIJKLMNOPQRSTUVWXYZ0123456789';
-			let result = '';
-			for (let i = 0; i < 6; i++) {
-				const randomIndex = Math.floor(Math.random() * charList.length);
-				result += charList[randomIndex];
-			}
-			return result;
-		})();
-
-		const game: Game = { id };
-
-		data.games[id] = game;
-
+		const game = new Game();
+		data.games[game.id] = game;
 		return game;
 	}
 };

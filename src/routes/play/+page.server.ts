@@ -1,4 +1,5 @@
 import { db } from '$lib/server/database';
+import { GameDtoUtil } from '$lib/server/dtos';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -15,5 +16,5 @@ export const load = (async ({ url }) => {
 		error(404, 'Game not found');
 	}
 
-	return { game };
+	return { game: GameDtoUtil.fromGame(game) };
 }) satisfies PageServerLoad;

@@ -1,4 +1,4 @@
-import type { Game } from './types/game';
+import type { Game } from '$lib/server/models';
 
 export const data: {
 	games: {

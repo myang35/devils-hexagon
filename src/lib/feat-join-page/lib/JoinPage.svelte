@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Game } from '$lib/server/database';
+	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
 	import { NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
 
-	const { game }: { game: Game } = $props();
+	const { game }: { game: GameDto } = $props();
 
 	let hexGrid: HexGrid;
 	let clickedIndexes = new Set<number>();

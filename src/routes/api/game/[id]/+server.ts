@@ -1,4 +1,5 @@
 import { db } from '$lib/server/database';
+import { GameDtoUtil } from '$lib/server/dtos';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -8,5 +9,5 @@ export const GET: RequestHandler = async ({ params }) => {
 		return Response.json({ error: 'NOT_FOUND', message: 'Game does not exist' }, { status: 404 });
 	}
 
-	return Response.json(game);
+	return Response.json(GameDtoUtil.fromGame(game));
 };
