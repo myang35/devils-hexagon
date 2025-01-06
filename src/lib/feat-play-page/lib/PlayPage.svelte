@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { HexGrid } from '$lib/ui-hex-grid';
 	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
-	import HexSlot from './components/hex-slot.svelte';
 
 	const { game }: { game: { id: string } } = $props();
 
-	let slots: HexSlot[] = [];
+	let hexGrid: HexGrid;
 	let clickedIndexes = new Set<number>();
 	let foundSolutions: Set<number>[] = [];
 	let isPlaying = $state(false);
@@ -20,13 +20,16 @@
 	let wrongMessage = $state('');
 
 	function onSlotClick(index: number) {
-		if (slots[index].isSelected()) {
+		const slots = hexGrid.getSlots();
+		const clickedSlot = slots[index];
+
+		if (clickedSlot.isSelected()) {
 			clickedIndexes.delete(index);
 		} else {
 			clickedIndexes.add(index);
 		}
 
-		slots[index].select();
+		clickedSlot.select();
 
 		if (clickedIndexes.size === 3) {
 			let sum = 0;
@@ -66,12 +69,11 @@
 	}
 
 	async function onStartClick() {
+		const slots = hexGrid.getSlots();
 		isPlaying = true;
 		showTarget = false;
-		slots.forEach((slot) => {
-			slot.hide();
-			slot.disable();
-		});
+		hexGrid.hideSlots();
+		hexGrid.disableSlots();
 		foundSolutions = [];
 
 		const valuesForTarget = {
@@ -103,24 +105,20 @@
 		await wait(1);
 
 		message = 'Memorize!';
-		slots.forEach((slot) => slot.show());
+		hexGrid.showSlots();
 		await wait(1);
 		await startTimer(30);
 
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
-		slots.forEach((slot) => {
-			slot.hide();
-			slot.enable();
-		});
+		hexGrid.hideSlots();
+		hexGrid.enableSlots();
 		await wait(3);
 		await startTimer(90);
 
 		message = 'Game Over!';
-		slots.forEach((slot) => {
-			slot.show();
-			slot.disable();
-		});
+		hexGrid.showSlots();
+		hexGrid.disableSlots();
 
 		isPlaying = false;
 	}
@@ -156,10 +154,8 @@
 		showTarget = false;
 		showTimer = false;
 		message = '';
-		slots.forEach((slot) => {
-			slot.hide();
-			slot.disable();
-		});
+		hexGrid.hideSlots();
+		hexGrid.disableSlots();
 		NamedTimeout.clear('wait');
 		NamedInterval.clear('timer');
 	}
@@ -190,35 +186,7 @@
 			{/if}
 		{/if}
 
-		<div class="flex gap-4">
-			<HexSlot bind:this={slots[0]} onclick={() => onSlotClick(0)}>A</HexSlot>
-			<HexSlot bind:this={slots[1]} onclick={() => onSlotClick(1)}>B</HexSlot>
-			<HexSlot bind:this={slots[2]} onclick={() => onSlotClick(2)}>C</HexSlot>
-		</div>
-		<div class="flex gap-4">
-			<HexSlot bind:this={slots[3]} onclick={() => onSlotClick(3)}>D</HexSlot>
-			<HexSlot bind:this={slots[4]} onclick={() => onSlotClick(4)}>E</HexSlot>
-			<HexSlot bind:this={slots[5]} onclick={() => onSlotClick(5)}>F</HexSlot>
-			<HexSlot bind:this={slots[6]} onclick={() => onSlotClick(6)}>G</HexSlot>
-		</div>
-		<div class="flex gap-4">
-			<HexSlot bind:this={slots[7]} onclick={() => onSlotClick(7)}>H</HexSlot>
-			<HexSlot bind:this={slots[8]} onclick={() => onSlotClick(8)}>I</HexSlot>
-			<HexSlot bind:this={slots[9]} onclick={() => onSlotClick(9)}>J</HexSlot>
-			<HexSlot bind:this={slots[10]} onclick={() => onSlotClick(10)}>K</HexSlot>
-			<HexSlot bind:this={slots[11]} onclick={() => onSlotClick(11)}>L</HexSlot>
-		</div>
-		<div class="flex gap-4">
-			<HexSlot bind:this={slots[12]} onclick={() => onSlotClick(12)}>M</HexSlot>
-			<HexSlot bind:this={slots[13]} onclick={() => onSlotClick(13)}>N</HexSlot>
-			<HexSlot bind:this={slots[14]} onclick={() => onSlotClick(14)}>O</HexSlot>
-			<HexSlot bind:this={slots[15]} onclick={() => onSlotClick(15)}>P</HexSlot>
-		</div>
-		<div class="flex gap-4">
-			<HexSlot bind:this={slots[16]} onclick={() => onSlotClick(16)}>Q</HexSlot>
-			<HexSlot bind:this={slots[17]} onclick={() => onSlotClick(17)}>R</HexSlot>
-			<HexSlot bind:this={slots[18]} onclick={() => onSlotClick(18)}>S</HexSlot>
-		</div>
+		<HexGrid bind:this={hexGrid} {onSlotClick} />
 	</div>
 
 	<span class="text-center text-3xl">{message}</span>
