@@ -20,7 +20,7 @@
 		}
 
 		const responseBody = await response.json();
-		goto(`${base}/play?g=${responseBody.id}`);
+		goto(`${base}/join?g=${responseBody.id}`);
 	}
 </script>
 
