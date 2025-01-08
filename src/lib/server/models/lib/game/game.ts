@@ -10,7 +10,7 @@ export class Game {
 	}[];
 	gridValues: number[];
 	foundSolutions: number[][];
-	status: 'waiting' | 'running' | 'finished';
+	status: 'waiting' | 'beginning' | 'memorizing' | 'answering' | 'finished';
 	lastModified: number;
 
 	constructor() {

@@ -27,7 +27,6 @@
 
 		if (updatedGame.lastModified !== game.lastModified) {
 			game = updatedGame;
-			console.log('Game Updated:', game);
 		}
 
 		setTimeout(() => watchGameChanges(), 1000);
@@ -35,7 +34,6 @@
 
 	function onAnswerClick() {
 		isAnswering = true;
-
 		setTimeout(() => hexGrid.enableSlots());
 	}
 
@@ -89,30 +87,40 @@
 	}
 </script>
 
-<div class="flex flex-col items-center gap-4 p-4">
+<div class="flex flex-col items-center gap-4">
 	<span class="text-center">Game ID: {game.id}</span>
 
-	{#if isAnswering}
-		<div class="relative flex flex-col items-center">
-			{#if showCorrect}
-				<Fa icon={faCheck} class="absolute inset-0 m-auto text-[20rem] text-green-500/80" />
-			{/if}
-			{#if showWrong}
-				<Fa icon={faX} class="absolute inset-0 m-auto text-[20rem] text-red-500/80" />
-				{#if wrongMessage}
-					<span
-						class="absolute inset-0 m-auto h-fit w-fit rounded border border-red-700 bg-red-100/90 px-2 py-1 text-5xl text-red-700"
-						>{wrongMessage}</span
-					>
+	{#if game.status === 'waiting'}
+		<span class="text-center text-3xl">Waiting for game to start...</span>
+	{:else if game.status === 'beginning'}
+		<span class="text-center text-3xl">Game is beginning...</span>
+	{:else if game.status === 'memorizing'}
+		<span class="text-center text-3xl">Memorize!</span>
+	{:else if game.status === 'answering'}
+		{#if isAnswering}
+			<div class="relative flex flex-col items-center">
+				{#if showCorrect}
+					<Fa icon={faCheck} class="absolute inset-0 m-auto text-[20rem] text-green-500/80" />
 				{/if}
-			{/if}
+				{#if showWrong}
+					<Fa icon={faX} class="absolute inset-0 m-auto text-[20rem] text-red-500/80" />
+					{#if wrongMessage}
+						<span
+							class="absolute inset-0 m-auto h-fit w-fit rounded border border-red-700 bg-red-100/90 px-2 py-1 text-5xl text-red-700"
+							>{wrongMessage}</span
+						>
+					{/if}
+				{/if}
 
-			<HexGrid bind:this={hexGrid} {onSlotClick} />
-		</div>
-	{:else}
-		<button
-			class="h-96 w-full rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
-			onclick={onAnswerClick}>Answer</button
-		>
+				<HexGrid bind:this={hexGrid} {onSlotClick} />
+			</div>
+		{:else}
+			<button
+				class="h-96 w-full rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
+				onclick={onAnswerClick}>Answer</button
+			>
+		{/if}
+	{:else if game.status === 'finished'}
+		<span class="text-center text-3xl">Game is finished</span>
 	{/if}
 </div>

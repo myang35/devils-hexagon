@@ -71,7 +71,7 @@
 	}
 
 	async function onStartClick() {
-		await api.game.update(game.id, { status: 'playing' });
+		await api.game.update(game.id, { status: 'beginning' });
 
 		const slots = hexGrid.getSlots();
 		isPlaying = true;
@@ -108,11 +108,13 @@
 		message = 'Set';
 		await wait(1);
 
+		await api.game.update(game.id, { status: 'memorizing' });
 		message = 'Memorize!';
 		hexGrid.showSlots();
 		await wait(1);
-		await startTimer(1);
+		await startTimer(3);
 
+		await api.game.update(game.id, { status: 'answering' });
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		hexGrid.hideSlots();
@@ -121,7 +123,6 @@
 		await startTimer(3);
 
 		await api.game.update(game.id, { status: 'finished' });
-
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
