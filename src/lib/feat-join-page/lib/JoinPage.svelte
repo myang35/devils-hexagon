@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
+	import { api } from '$lib/util-api';
 	import { NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
+	import { onMount } from 'svelte';
 	import Fa from 'svelte-fa';
 
-	const { game }: { game: GameDto } = $props();
+	let { game }: { game: GameDto } = $props();
 
 	let hexGrid: HexGrid;
 	let clickedIndexes = new Set<number>();
@@ -15,6 +17,21 @@
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
+
+	onMount(() => {
+		watchGameChanges();
+	});
+
+	async function watchGameChanges() {
+		const updatedGame = await api.game.get(game.id);
+
+		if (updatedGame.lastModified !== game.lastModified) {
+			game = updatedGame;
+			console.log('Game Updated:', game);
+		}
+
+		setTimeout(() => watchGameChanges(), 1000);
+	}
 
 	function onAnswerClick() {
 		isAnswering = true;

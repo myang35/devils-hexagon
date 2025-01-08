@@ -10,5 +10,6 @@ export type GameDto = {
 	}[];
 	gridValues: number[];
 	foundSolutions: number[][];
-	isRunning: boolean;
+	status: string;
+	lastModified: number;
 };

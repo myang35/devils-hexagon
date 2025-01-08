@@ -7,7 +7,8 @@ export const GameDtoUtil = {
 			players: game.players,
 			gridValues: game.gridValues,
 			foundSolutions: game.foundSolutions,
-			isRunning: game.isRunning
+			status: game.status,
+			lastModified: game.lastModified
 		};
 	}
 };

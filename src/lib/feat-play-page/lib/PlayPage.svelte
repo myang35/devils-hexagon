@@ -1,11 +1,12 @@
 <script lang="ts">
 	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
+	import { api } from '$lib/util-api';
 	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
 
-	const { game }: { game: GameDto } = $props();
+	let { game }: { game: GameDto } = $props();
 
 	let hexGrid: HexGrid;
 	let clickedIndexes = new Set<number>();
@@ -70,6 +71,8 @@
 	}
 
 	async function onStartClick() {
+		await api.game.update(game.id, { status: 'playing' });
+
 		const slots = hexGrid.getSlots();
 		isPlaying = true;
 		showTarget = false;
@@ -115,12 +118,13 @@
 		hexGrid.hideSlots();
 		hexGrid.enableSlots();
 		await wait(3);
-		await startTimer(90);
+		await startTimer(3);
+
+		await api.game.update(game.id, { status: 'finished' });
 
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
-
 		isPlaying = false;
 	}
 
@@ -150,7 +154,8 @@
 		});
 	}
 
-	function reset() {
+	async function reset() {
+		await api.game.update(game.id, { status: 'waiting' });
 		isPlaying = false;
 		showTarget = false;
 		showTimer = false;

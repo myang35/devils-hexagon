@@ -10,7 +10,8 @@ export class Game {
 	}[];
 	gridValues: number[];
 	foundSolutions: number[][];
-	isRunning: boolean;
+	status: 'waiting' | 'running' | 'finished';
+	lastModified: number;
 
 	constructor() {
 		this.id = (() => {
@@ -25,6 +26,7 @@ export class Game {
 		this.players = [];
 		this.gridValues = [];
 		this.foundSolutions = [];
-		this.isRunning = false;
+		this.status = 'waiting';
+		this.lastModified = Date.now();
 	}
 }
