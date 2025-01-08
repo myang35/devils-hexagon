@@ -4,7 +4,7 @@
 	import { api } from '$lib/util-api';
 	import { NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
 
 	let { game }: { game: GameDto } = $props();
@@ -22,6 +22,10 @@
 		watchGameChanges();
 	});
 
+	onDestroy(() => {
+		NamedTimeout.clear('watchGameChanges');
+	});
+
 	async function watchGameChanges() {
 		const updatedGame = await api.game.get(game.id);
 
@@ -29,7 +33,7 @@
 			game = updatedGame;
 		}
 
-		setTimeout(() => watchGameChanges(), 1000);
+		NamedTimeout.set('watchGameChanges', () => watchGameChanges(), 1000);
 	}
 
 	function onAnswerClick() {
