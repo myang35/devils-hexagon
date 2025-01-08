@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
-	import { api } from '$lib/util-api';
+	import { Api } from '$lib/util-api';
 	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
@@ -71,7 +71,7 @@
 	}
 
 	async function onStartClick() {
-		await api.game.update(game.id, { status: 'beginning' });
+		await Api.game.update(game.id, { status: 'beginning' });
 
 		const slots = hexGrid.getSlots();
 		isPlaying = true;
@@ -108,13 +108,13 @@
 		message = 'Set';
 		await wait(1);
 
-		await api.game.update(game.id, { status: 'memorizing' });
+		await Api.game.update(game.id, { status: 'memorizing' });
 		message = 'Memorize!';
 		hexGrid.showSlots();
 		await wait(1);
 		await startTimer(3);
 
-		await api.game.update(game.id, { status: 'answering' });
+		await Api.game.update(game.id, { status: 'answering' });
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		hexGrid.hideSlots();
@@ -122,7 +122,7 @@
 		await wait(3);
 		await startTimer(3);
 
-		await api.game.update(game.id, { status: 'finished' });
+		await Api.game.update(game.id, { status: 'finished' });
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
@@ -156,7 +156,7 @@
 	}
 
 	async function reset() {
-		await api.game.update(game.id, { status: 'waiting' });
+		await Api.game.update(game.id, { status: 'waiting' });
 		isPlaying = false;
 		showTarget = false;
 		showTimer = false;

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
-	import { api } from '$lib/util-api';
+	import { Api } from '$lib/util-api';
 	import { NamedTimeout } from '$lib/util-basic';
+	import { Player } from '$lib/util-player';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
@@ -20,6 +21,10 @@
 
 	onMount(() => {
 		watchGameChanges();
+		const playerId = Player.init();
+		if (!game.players[playerId]) {
+			Api.game.addPlayer(game.id, playerId);
+		}
 	});
 
 	onDestroy(() => {
@@ -27,7 +32,7 @@
 	});
 
 	async function watchGameChanges() {
-		const updatedGame = await api.game.get(game.id);
+		const updatedGame = await Api.game.get(game.id);
 
 		if (updatedGame.lastModified !== game.lastModified) {
 			game = updatedGame;

@@ -19,5 +19,17 @@ export const gameRouter = {
 		Object.assign(game, body);
 		game.lastModified = Date.now();
 		return game;
+	},
+	addPlayer: async (id: string, playerId: string) => {
+		const game = data.games[id];
+		if (!game) return null;
+		game.players[playerId] = {
+			name: '',
+			ready: false,
+			points: 0,
+			isAnswering: false
+		};
+		game.lastModified = Date.now();
+		return game;
 	}
 };

@@ -1,5 +1,6 @@
 export type GameDto = {
 	id: string;
+	status: string;
 	players: {
 		[id: string]: {
 			name: string;
@@ -7,9 +8,10 @@ export type GameDto = {
 			points: number;
 			isAnswering: boolean;
 		};
-	}[];
+	};
 	gridValues: number[];
+	selectedIndexes: number[];
 	foundSolutions: number[][];
-	status: string;
+	target: number;
 	lastModified: number;
 };

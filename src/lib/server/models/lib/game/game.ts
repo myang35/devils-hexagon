@@ -1,5 +1,6 @@
 export class Game {
 	id: string;
+	status: 'waiting' | 'beginning' | 'memorizing' | 'answering' | 'finished';
 	players: {
 		[id: string]: {
 			name: string;
@@ -7,10 +8,11 @@ export class Game {
 			points: number;
 			isAnswering: boolean;
 		};
-	}[];
+	};
 	gridValues: number[];
+	selectedIndexes: number[];
 	foundSolutions: number[][];
-	status: 'waiting' | 'beginning' | 'memorizing' | 'answering' | 'finished';
+	target: number;
 	lastModified: number;
 
 	constructor() {
@@ -23,10 +25,12 @@ export class Game {
 			}
 			return result;
 		})();
-		this.players = [];
-		this.gridValues = [];
-		this.foundSolutions = [];
 		this.status = 'waiting';
+		this.players = {};
+		this.gridValues = [];
+		this.selectedIndexes = [];
+		this.foundSolutions = [];
+		this.target = 0;
 		this.lastModified = Date.now();
 	}
 }

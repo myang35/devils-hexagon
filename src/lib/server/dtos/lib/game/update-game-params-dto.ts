@@ -1,4 +1,5 @@
 export type UpdateGameParamsDto = {
+	status?: string;
 	players?: {
 		[id: string]: {
 			name?: string;
@@ -6,9 +7,10 @@ export type UpdateGameParamsDto = {
 			points?: number;
 			isAnswering?: boolean;
 		};
-	}[];
+	};
 	gridValues?: number[];
+	selectedIndexes?: number[];
 	foundSolutions?: number[][];
-	status?: string;
+	target?: number;
 	lastModified?: number;
 };
