@@ -64,6 +64,7 @@
 		hexGrid.enableSlots();
 		hexGrid.getSlots().forEach((slot, i) => slot.setValue(game.gridValues[i]));
 		timer.start(15);
+		showTimer = true;
 		await timer.wait();
 
 		if (game.players[player.id].isAnswering) {
