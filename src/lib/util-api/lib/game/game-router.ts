@@ -1,5 +1,5 @@
 import { base } from '$app/paths';
-import type { GameDto, UpdateGameParamsDto } from '$lib/server/dtos';
+import type { GameAddPlayerParamsDto, GameDto, UpdateGameParamsDto } from '$lib/server/dtos';
 
 export const gameRouter = {
 	get: async (id: string) => {
@@ -14,13 +14,13 @@ export const gameRouter = {
 			body: JSON.stringify(game)
 		}).then((res) => res.json()) as Promise<GameDto>;
 	},
-	addPlayer: async (id: string, playerId: string) => {
+	addPlayer: async (id: string, player: GameAddPlayerParamsDto) => {
 		return fetch(`${base}/api/game/${id}/player`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ playerId })
+			body: JSON.stringify(player)
 		}).then((res) => res.json()) as Promise<GameDto>;
 	}
 };

@@ -16,13 +16,12 @@
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
+	let playerId = $state('');
+	let joinErrorMessage = $state('');
 
 	onMount(() => {
 		watchGameChanges();
-		const playerId = Player.init();
-		if (!game.players[playerId]) {
-			Api.game.addPlayer(game.id, playerId);
-		}
+		playerId = Player.init();
 	});
 
 	onDestroy(() => {
@@ -37,6 +36,21 @@
 		}
 
 		NamedTimeout.set('watchGameChanges', () => watchGameChanges(), 1000);
+	}
+
+	async function onJoinSubmit(e: SubmitEvent) {
+		e.preventDefault();
+
+		const form = e.currentTarget as HTMLFormElement;
+		const formData = new FormData(form);
+		const name = formData.get('name')?.toString();
+
+		if (!name) {
+			joinErrorMessage = 'Name is required';
+			return;
+		}
+
+		game = await Api.game.addPlayer(game.id, { id: playerId, name });
 	}
 
 	function onAnswerClick() {
@@ -75,7 +89,8 @@
 					showWrong = true;
 				} else {
 					game.foundSolutions.push(clickedIndexes);
-					game = await Api.game.update(game.id, { foundSolutions: game.foundSolutions });
+					game.players[playerId].points += 1;
+					game = await Api.game.update(game.id, game);
 					showCorrect = true;
 				}
 			} else {
@@ -102,8 +117,28 @@
 <div class="flex flex-col items-center gap-4">
 	<span class="text-center">Game ID: {game.id}</span>
 
-	{#if game.status === 'waiting'}
-		<span class="text-center text-3xl">Waiting for game to start...</span>
+	{#if game.status === 'waiting' || game.status === 'finished'}
+		{#if playerId && !game.players[playerId]}
+			<form onsubmit={onJoinSubmit} class="flex flex-col items-center gap-4">
+				<input
+					name="name"
+					type="text"
+					placeholder="Enter Name"
+					maxlength="16"
+					class="rounded-lg border border-black px-2 py-1 text-center text-2xl"
+				/>
+				{#if joinErrorMessage}
+					<span class="text-red-500">{joinErrorMessage}</span>
+				{/if}
+				<button
+					type="submit"
+					class="rounded-full border-4 border-red-800/80 bg-red-500/80 px-4 py-2 text-2xl font-bold tracking-wide text-white"
+					>Join Game</button
+				>
+			</form>
+		{:else}
+			<span class="text-center text-3xl">Waiting for game to start...</span>
+		{/if}
 	{:else if game.status === 'beginning'}
 		<span class="text-center text-3xl">Game is beginning...</span>
 	{:else if game.status === 'memorizing'}
@@ -132,7 +167,5 @@
 				onclick={onAnswerClick}>Answer</button
 			>
 		{/if}
-	{:else if game.status === 'finished'}
-		<span class="text-center text-3xl">Game is finished</span>
 	{/if}
 </div>

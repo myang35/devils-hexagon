@@ -1,5 +1,5 @@
 import { data } from '$lib/server/data';
-import type { UpdateGameParamsDto } from '$lib/server/dtos';
+import type { GameAddPlayerParamsDto, UpdateGameParamsDto } from '$lib/server/dtos';
 import { Game } from '$lib/server/models';
 
 export const gameRouter = {
@@ -20,11 +20,11 @@ export const gameRouter = {
 		game.lastModified = Date.now();
 		return game;
 	},
-	addPlayer: async (id: string, playerId: string) => {
+	addPlayer: async (id: string, player: GameAddPlayerParamsDto) => {
 		const game = data.games[id];
 		if (!game) return null;
-		game.players[playerId] = {
-			name: '',
+		game.players[player.id] = {
+			name: player.name,
 			ready: false,
 			points: 0,
 			isAnswering: false

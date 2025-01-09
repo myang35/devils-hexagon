@@ -4,6 +4,7 @@
 	import { Api } from '$lib/util-api';
 	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
+	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
 
 	let { game }: { game: GameDto } = $props();
@@ -20,6 +21,24 @@
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
+
+	onMount(() => {
+		watchGameChanges();
+	});
+
+	onDestroy(() => {
+		NamedTimeout.clear('watchGameChanges');
+	});
+
+	async function watchGameChanges() {
+		const updatedGame = await Api.game.get(game.id);
+
+		if (updatedGame.lastModified !== game.lastModified) {
+			game = updatedGame;
+		}
+
+		NamedTimeout.set('watchGameChanges', () => watchGameChanges(), 1000);
+	}
 
 	function onSlotClick(index: number) {
 		const slots = hexGrid.getSlots();
@@ -183,6 +202,15 @@
 			>Start</button
 		>
 	{/if}
+
+	<div class="flex w-full justify-center gap-8 border-y-2 border-black/40 px-4 py-1">
+		{#each Object.entries(game.players) as [playerId, player]}
+			<div class="flex flex-col items-center">
+				<span class="text-lg">{player.name ? player.name : playerId}</span>
+				<span>Score: {player.points}</span>
+			</div>
+		{/each}
+	</div>
 
 	<div class="relative flex flex-col items-center">
 		{#if showCorrect}
