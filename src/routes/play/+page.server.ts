@@ -16,5 +16,7 @@ export const load = (async ({ url }) => {
 		error(404, 'Game not found');
 	}
 
-	return { game: GameDtoUtil.fromGame(game) };
+	const gameDto = GameDtoUtil.fromGame(game);
+
+	return { game: gameDto };
 }) satisfies PageServerLoad;

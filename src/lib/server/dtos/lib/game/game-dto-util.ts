@@ -1,4 +1,5 @@
 import type { Game } from '$lib/server/models';
+import type { GameDto } from './game-dto';
 
 export const GameDtoUtil = {
 	fromGame(game: Game) {
@@ -11,6 +12,6 @@ export const GameDtoUtil = {
 			foundSolutions: game.foundSolutions,
 			target: game.target,
 			lastModified: game.lastModified
-		};
+		} as GameDto;
 	}
 };

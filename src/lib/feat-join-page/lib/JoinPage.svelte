@@ -1,14 +1,13 @@
 <script lang="ts">
-	import type { GameDto } from '$lib/server/dtos';
+	import type { GameDto, PlayerDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
 	import { Api } from '$lib/util-api';
 	import { NamedTimeout } from '$lib/util-basic';
-	import { Player } from '$lib/util-player';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
 
-	let { game }: { game: GameDto } = $props();
+	let { game, player }: { game: GameDto; player: PlayerDto } = $props();
 
 	let hexGrid: HexGrid;
 	let clickedIndexes: number[] = [];
@@ -16,12 +15,10 @@
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
-	let playerId = $state('');
 	let joinErrorMessage = $state('');
 
-	onMount(() => {
+	onMount(async () => {
 		watchGameChanges();
-		playerId = Player.init();
 	});
 
 	onDestroy(() => {
@@ -50,7 +47,7 @@
 			return;
 		}
 
-		game = await Api.game.addPlayer(game.id, { id: playerId, name });
+		game = await Api.game.addPlayer(game.id, { id: player.id, name });
 	}
 
 	function onAnswerClick() {
@@ -89,7 +86,7 @@
 					showWrong = true;
 				} else {
 					game.foundSolutions.push(clickedIndexes);
-					game.players[playerId].points += 1;
+					game.players[player.id].points += 1;
 					game = await Api.game.update(game.id, game);
 					showCorrect = true;
 				}
@@ -118,7 +115,7 @@
 	<span class="text-center">Game ID: {game.id}</span>
 
 	{#if game.status === 'waiting' || game.status === 'finished'}
-		{#if playerId && !game.players[playerId]}
+		{#if !game.players[player.id]}
 			<form onsubmit={onJoinSubmit} class="flex flex-col items-center gap-4">
 				<input
 					name="name"
