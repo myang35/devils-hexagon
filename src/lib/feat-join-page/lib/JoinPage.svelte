@@ -2,7 +2,7 @@
 	import type { GameDto, PlayerDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
 	import { Api } from '$lib/util-api';
-	import { NamedTimeout } from '$lib/util-basic';
+	import { NamedTimeout, Timer, wait } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
@@ -11,11 +11,15 @@
 
 	let hexGrid: HexGrid;
 	let clickedIndexes: number[] = [];
-	let isAnswering = $state(false);
+	let otherPlayerAnswering = $derived(
+		Object.entries(game.players).some(([id, p]) => p.isAnswering && id !== player.id)
+	);
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
 	let joinErrorMessage = $state('');
+	let showTimer = $state(false);
+	let timer = new Timer();
 
 	onMount(async () => {
 		watchGameChanges();
@@ -23,6 +27,7 @@
 
 	onDestroy(() => {
 		NamedTimeout.clear('watchGameChanges');
+		timer.stop();
 	});
 
 	async function watchGameChanges() {
@@ -50,12 +55,22 @@
 		game = await Api.game.addPlayer(game.id, { id: player.id, name });
 	}
 
-	function onAnswerClick() {
-		isAnswering = true;
-		setTimeout(() => {
-			hexGrid.enableSlots();
-			hexGrid.getSlots().forEach((slot, i) => slot.setValue(game.gridValues[i]));
-		});
+	async function onAnswerClick() {
+		game.players[player.id].isAnswering = true;
+		game = await Api.game.update(game.id, game);
+
+		await wait(0); // wait for DOM to update
+
+		hexGrid.enableSlots();
+		hexGrid.getSlots().forEach((slot, i) => slot.setValue(game.gridValues[i]));
+		timer.start(15);
+		await timer.wait();
+
+		if (game.players[player.id].isAnswering) {
+			game.players[player.id].isAnswering = false;
+			game.players[player.id].points -= 1;
+			game = await Api.game.update(game.id, game);
+		}
 	}
 
 	async function onSlotClick(index: number) {
@@ -82,6 +97,8 @@
 					foundSolution.toSorted().every((index, i) => index === clickedIndexes[i])
 				);
 				if (alreadyFound) {
+					game.players[player.id].points -= 1;
+					game = await Api.game.update(game.id, game);
 					wrongMessage = 'Already Found';
 					showWrong = true;
 				} else {
@@ -91,6 +108,8 @@
 					showCorrect = true;
 				}
 			} else {
+				game.players[player.id].points -= 1;
+				game = await Api.game.update(game.id, game);
 				wrongMessage = '';
 				showWrong = true;
 			}
@@ -104,6 +123,8 @@
 					clickedIndexes = [];
 					showCorrect = false;
 					showWrong = false;
+					game.players[player.id].isAnswering = false;
+					Api.game.update(game.id, game).then((updatedGame) => (game = updatedGame));
 				},
 				1000
 			);
@@ -141,7 +162,7 @@
 	{:else if game.status === 'memorizing'}
 		<span class="text-center text-3xl">Memorize!</span>
 	{:else if game.status === 'answering'}
-		{#if isAnswering}
+		{#if game.players[player.id].isAnswering}
 			<div class="relative flex flex-col items-center">
 				{#if showCorrect}
 					<Fa icon={faCheck} class="absolute inset-0 m-auto text-[20rem] text-green-500/80" />
@@ -158,9 +179,15 @@
 
 				<HexGrid bind:this={hexGrid} {onSlotClick} />
 			</div>
+
+			{#if showTimer}
+				<span class="text-3xl">Timer: {timer.seconds}</span>
+			{/if}
+		{:else if otherPlayerAnswering}
+			<span class="text-center text-3xl">Waiting for other player to answer...</span>
 		{:else}
 			<button
-				class="h-96 w-full rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
+				class="h-40 w-full max-w-96 rounded-full border-8 border-red-800/80 bg-gradient-to-tr from-red-500/80 to-red-500/60 text-5xl font-bold tracking-wide text-white"
 				onclick={onAnswerClick}>Answer</button
 			>
 		{/if}

@@ -15,5 +15,8 @@ export const NamedTimeout = {
 	clear(name: string) {
 		clearTimeout(timeouts[name]);
 		delete timeouts[name];
+	},
+	exists(name: string) {
+		return timeouts[name] !== undefined;
 	}
 };

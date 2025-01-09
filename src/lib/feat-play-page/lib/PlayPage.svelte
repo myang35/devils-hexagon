@@ -2,7 +2,7 @@
 	import type { GameDto } from '$lib/server/dtos';
 	import { HexGrid } from '$lib/ui-hex-grid';
 	import { Api } from '$lib/util-api';
-	import { NamedInterval, NamedTimeout } from '$lib/util-basic';
+	import { NamedTimeout, Timer } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
 	import { onDestroy, onMount } from 'svelte';
 	import Fa from 'svelte-fa';
@@ -10,17 +10,27 @@
 	let { game }: { game: GameDto } = $props();
 
 	let hexGrid: HexGrid;
-	let clickedIndexes = new Set<number>();
-	let foundSolutions: Set<number>[] = [];
-	let isPlaying = $state(false);
+	let clickedIndexes: number[] = [];
+	let playerAnswering = $derived(Object.values(game.players).find((p) => p.isAnswering));
 	let message = $state('');
-	let timer = $state(0);
+	let timer = new Timer();
 	let showTimer = $state(false);
-	let target = $state(0);
 	let showTarget = $state(false);
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
+
+	$effect(() => {
+		if (game.status !== 'answering') return;
+
+		if (playerAnswering) {
+			message = `${playerAnswering.name} is answering...`;
+			timer.stop();
+		} else {
+			message = 'Select 3 slots whose sum equals the target';
+			timer.start();
+		}
+	});
 
 	onMount(() => {
 		watchGameChanges();
@@ -28,6 +38,7 @@
 
 	onDestroy(() => {
 		NamedTimeout.clear('watchGameChanges');
+		timer.stop();
 	});
 
 	async function watchGameChanges() {
@@ -45,28 +56,29 @@
 		const clickedSlot = slots[index];
 
 		if (clickedSlot.isSelected()) {
-			clickedIndexes.delete(index);
+			clickedIndexes.splice(clickedIndexes.indexOf(index), 1);
 		} else {
-			clickedIndexes.add(index);
+			clickedIndexes.push(index);
+			clickedIndexes.sort();
 		}
 
 		clickedSlot.select();
 
-		if (clickedIndexes.size === 3) {
+		if (clickedIndexes.length === 3) {
 			let sum = 0;
 			clickedIndexes.forEach((i) => {
 				sum += slots[i].getValue();
 			});
 
-			if (sum === target) {
-				const alreadyFound = foundSolutions.some((foundSolution) =>
-					foundSolution.isSubsetOf(clickedIndexes)
+			if (sum === game.target) {
+				const alreadyFound = game.foundSolutions.some((fs) =>
+					fs.toSorted().every((index, i) => index === clickedIndexes[i])
 				);
 				if (alreadyFound) {
 					wrongMessage = 'Already Found';
 					showWrong = true;
 				} else {
-					foundSolutions.push(new Set(clickedIndexes));
+					game.foundSolutions.push(clickedIndexes);
 					showCorrect = true;
 				}
 			} else {
@@ -80,7 +92,7 @@
 					clickedIndexes.forEach((i) => {
 						slots[i].select();
 					});
-					clickedIndexes.clear();
+					clickedIndexes = [];
 					showCorrect = false;
 					showWrong = false;
 				},
@@ -91,40 +103,36 @@
 
 	async function onStartClick() {
 		const slots = hexGrid.getSlots();
-		isPlaying = true;
 		showTarget = false;
 		hexGrid.hideSlots();
 		hexGrid.disableSlots();
-		foundSolutions = [];
 
-		const valuesForTarget = {
-			6: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4],
-			7: [1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5],
-			8: [1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6],
-			9: [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6],
-			10: [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5],
-			11: [1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6],
-			12: [2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6],
-			13: [2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6],
-			14: [3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7],
-			15: [3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7]
-		};
-		target = Math.floor(Math.random() * 10) + 6; // 6 through 15
+		game.status = 'beginning';
+		game.foundSolutions = [];
+		game.target = Math.floor(Math.random() * 10) + 6; // 6 through 15
+		game.gridValues = (() => {
+			const valuesForTarget = {
+				6: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4],
+				7: [1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5],
+				8: [1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6],
+				9: [1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6],
+				10: [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5],
+				11: [1, 1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6],
+				12: [2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6],
+				13: [2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6],
+				14: [3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7],
+				15: [3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7]
+			};
+			const valueList = valuesForTarget[game.target as keyof typeof valuesForTarget];
+			slots.forEach((slot) => {
+				const randomIndex = Math.floor(Math.random() * valueList.length);
+				const randomValue = valueList.splice(randomIndex, 1)[0];
+				slot.setValue(randomValue);
+			});
+			return slots.map((slot) => slot.getValue());
+		})();
 
-		const valueList = valuesForTarget[target as keyof typeof valuesForTarget];
-
-		slots.forEach((slot) => {
-			const randomIndex = Math.floor(Math.random() * valueList.length);
-			const randomValue = valueList.splice(randomIndex, 1)[0];
-			slot.setValue(randomValue);
-		});
-
-		await Api.game.update(game.id, {
-			status: 'beginning',
-			gridValues: slots.map((slot) => slot.getValue()),
-			foundSolutions: [],
-			target
-		});
+		game = await Api.game.update(game.id, game);
 
 		message = 'Ready';
 		await wait(1);
@@ -135,22 +143,23 @@
 		await Api.game.update(game.id, { status: 'memorizing' });
 		message = 'Memorize!';
 		hexGrid.showSlots();
-		await wait(1);
-		await startTimer(3);
+		showTimer = true;
+		timer.start(3);
+		await timer.wait();
 
 		await Api.game.update(game.id, { status: 'answering' });
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		hexGrid.hideSlots();
 		hexGrid.enableSlots();
-		await wait(3);
-		await startTimer(20);
+		showTimer = true;
+		timer.start(20);
+		await timer.wait();
 
 		await Api.game.update(game.id, { status: 'finished' });
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
-		isPlaying = false;
 	}
 
 	async function wait(seconds: number) {
@@ -159,48 +168,28 @@
 		});
 	}
 
-	async function startTimer(seconds: number) {
-		showTimer = true;
-		timer = seconds;
-
-		return new Promise<void>((resolve) => {
-			NamedInterval.set(
-				'timer',
-				() => {
-					if (timer <= 0) {
-						showTimer = false;
-						NamedInterval.clear('timer');
-						resolve();
-					}
-					timer--;
-				},
-				1000
-			);
-		});
-	}
-
 	async function reset() {
 		await Api.game.update(game.id, { status: 'waiting' });
-		isPlaying = false;
 		showTarget = false;
 		showTimer = false;
+		timer.stop();
+		timer.reset();
 		message = '';
 		hexGrid.hideSlots();
 		hexGrid.disableSlots();
 		NamedTimeout.clear('wait');
-		NamedInterval.clear('timer');
 	}
 </script>
 
 <div class="flex flex-col items-center gap-4">
 	<h1>Game ID: {game.id}</h1>
 
-	{#if isPlaying}
-		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={reset}>Stop</button>
-	{:else}
+	{#if game.status === 'waiting' || game.status === 'finished'}
 		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={onStartClick}
 			>Start</button
 		>
+	{:else}
+		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={reset}>Stop</button>
 	{/if}
 
 	<div class="flex w-full justify-center gap-8 border-y-2 border-black/40 px-4 py-1">
@@ -234,11 +223,16 @@
 	{#if showTarget}
 		<div class="flex flex-col items-center rounded border border-black px-4 py-2">
 			<span class="text-xl">Target:</span>
-			<span class="text-5xl">{target}</span>
+			<span class="text-5xl">{game.target}</span>
 		</div>
 	{/if}
 
 	{#if showTimer}
-		<span class="text-3xl">Timer: {timer}</span>
+		<div class="flex flex-col text-center">
+			<span class="text-3xl">Timer: {timer.seconds}</span>
+			{#if playerAnswering}
+				<span class="italic">(paused)</span>
+			{/if}
+		</div>
 	{/if}
 </div>

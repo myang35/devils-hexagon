@@ -8,5 +8,8 @@ export const NamedInterval = {
 	clear(name: string) {
 		clearInterval(intervals[name]);
 		delete intervals[name];
+	},
+	exists(name: string) {
+		return intervals[name] !== undefined;
 	}
 };
