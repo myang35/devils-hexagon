@@ -11,9 +11,7 @@
 	let { game }: { game: GameDto } = $props();
 
 	let hexGrid: HexGrid;
-	let clickedIndexes = new Set<number>();
-	let foundSolutions: Set<number>[] = [];
-	let target = $state(0);
+	let clickedIndexes: number[] = [];
 	let isAnswering = $state(false);
 	let showCorrect = $state(false);
 	let showWrong = $state(false);
@@ -43,36 +41,41 @@
 
 	function onAnswerClick() {
 		isAnswering = true;
-		setTimeout(() => hexGrid.enableSlots());
+		setTimeout(() => {
+			hexGrid.enableSlots();
+			hexGrid.getSlots().forEach((slot, i) => slot.setValue(game.gridValues[i]));
+		});
 	}
 
-	function onSlotClick(index: number) {
+	async function onSlotClick(index: number) {
 		const slots = hexGrid.getSlots();
 		const clickedSlot = slots[index];
 
 		if (clickedSlot.isSelected()) {
-			clickedIndexes.delete(index);
+			clickedIndexes.splice(clickedIndexes.indexOf(index), 1);
 		} else {
-			clickedIndexes.add(index);
+			clickedIndexes.push(index);
+			clickedIndexes.sort();
 		}
 
 		clickedSlot.select();
 
-		if (clickedIndexes.size === 3) {
+		if (clickedIndexes.length === 3) {
 			let sum = 0;
 			clickedIndexes.forEach((i) => {
 				sum += slots[i].getValue();
 			});
 
-			if (sum === target) {
-				const alreadyFound = foundSolutions.some((foundSolution) =>
-					foundSolution.isSubsetOf(clickedIndexes)
+			if (sum === game.target) {
+				const alreadyFound = game.foundSolutions.some((foundSolution) =>
+					foundSolution.toSorted().every((index, i) => index === clickedIndexes[i])
 				);
 				if (alreadyFound) {
 					wrongMessage = 'Already Found';
 					showWrong = true;
 				} else {
-					foundSolutions.push(new Set(clickedIndexes));
+					game.foundSolutions.push(clickedIndexes);
+					game = await Api.game.update(game.id, { foundSolutions: game.foundSolutions });
 					showCorrect = true;
 				}
 			} else {
@@ -86,7 +89,7 @@
 					clickedIndexes.forEach((i) => {
 						slots[i].select();
 					});
-					clickedIndexes.clear();
+					clickedIndexes = [];
 					showCorrect = false;
 					showWrong = false;
 				},

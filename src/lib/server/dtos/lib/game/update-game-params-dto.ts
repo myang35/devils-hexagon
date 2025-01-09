@@ -12,5 +12,4 @@ export type UpdateGameParamsDto = {
 	selectedIndexes?: number[];
 	foundSolutions?: number[][];
 	target?: number;
-	lastModified?: number;
 };

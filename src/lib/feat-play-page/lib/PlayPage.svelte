@@ -71,8 +71,6 @@
 	}
 
 	async function onStartClick() {
-		await Api.game.update(game.id, { status: 'beginning' });
-
 		const slots = hexGrid.getSlots();
 		isPlaying = true;
 		showTarget = false;
@@ -102,6 +100,13 @@
 			slot.setValue(randomValue);
 		});
 
+		await Api.game.update(game.id, {
+			status: 'beginning',
+			gridValues: slots.map((slot) => slot.getValue()),
+			foundSolutions: [],
+			target
+		});
+
 		message = 'Ready';
 		await wait(1);
 
@@ -120,7 +125,7 @@
 		hexGrid.hideSlots();
 		hexGrid.enableSlots();
 		await wait(3);
-		await startTimer(3);
+		await startTimer(20);
 
 		await Api.game.update(game.id, { status: 'finished' });
 		message = 'Game Over!';
