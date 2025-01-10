@@ -140,14 +140,14 @@
 		message = 'Set';
 		await wait(1);
 
-		await Api.game.update(game.id, { status: 'memorizing' });
+		game = await Api.game.update(game.id, { status: 'memorizing' });
 		message = 'Memorize!';
 		hexGrid.showSlots();
 		showTimer = true;
 		timer.start(3);
 		await timer.wait();
 
-		await Api.game.update(game.id, { status: 'answering' });
+		game = await Api.game.update(game.id, { status: 'answering' });
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		hexGrid.hideSlots();
@@ -156,7 +156,7 @@
 		timer.start(20);
 		await timer.wait();
 
-		await Api.game.update(game.id, { status: 'finished' });
+		game = await Api.game.update(game.id, { status: 'finished' });
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
@@ -169,7 +169,11 @@
 	}
 
 	async function reset() {
-		await Api.game.update(game.id, { status: 'waiting' });
+		for (const player of Object.values(game.players)) {
+			player.isAnswering = false;
+		}
+		game.status = 'waiting';
+		game = await Api.game.update(game.id, game);
 		showTarget = false;
 		showTimer = false;
 		timer.stop();
