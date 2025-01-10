@@ -38,7 +38,7 @@
 
 	onDestroy(() => {
 		NamedTimeout.clear('watchGameChanges');
-		timer.stop();
+		reset();
 	});
 
 	async function watchGameChanges() {

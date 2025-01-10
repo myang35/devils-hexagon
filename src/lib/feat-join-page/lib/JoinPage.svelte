@@ -18,7 +18,9 @@
 	let showWrong = $state(false);
 	let wrongMessage = $state('');
 	let joinErrorMessage = $state('');
+	let renameErrorMessage = $state('');
 	let showTimer = $state(false);
+	let isRenaming = $state(false);
 	let timer = new Timer();
 
 	onMount(async () => {
@@ -131,6 +133,24 @@
 			);
 		}
 	}
+
+	async function onRenameSubmit(e: SubmitEvent) {
+		e.preventDefault();
+
+		const form = e.currentTarget as HTMLFormElement;
+		const formData = new FormData(form);
+		const name = formData.get('name')?.toString();
+
+		if (!name) {
+			renameErrorMessage = 'Name is required';
+			return;
+		}
+
+		game.players[player.id].name = name;
+		game = await Api.game.update(game.id, game);
+
+		isRenaming = false;
+	}
 </script>
 
 <div class="flex flex-col items-center gap-4">
@@ -139,16 +159,22 @@
 	{#if game.status === 'waiting' || game.status === 'finished'}
 		{#if !game.players[player.id]}
 			<form onsubmit={onJoinSubmit} class="flex flex-col items-center gap-4">
-				<input
-					name="name"
-					type="text"
-					placeholder="Enter Name"
-					maxlength="16"
-					class="rounded-lg border border-black px-2 py-1 text-center text-2xl"
-				/>
-				{#if joinErrorMessage}
-					<span class="text-red-500">{joinErrorMessage}</span>
-				{/if}
+				<div class="flex flex-col items-center">
+					<input
+						name="name"
+						type="text"
+						placeholder="Enter Name"
+						maxlength="16"
+						class="rounded-lg border border-black px-2 py-1 text-center text-2xl"
+					/>
+					{#if joinErrorMessage}
+						<span
+							class="w-full rounded border border-red-900/60 bg-red-200/60 px-2 py-1 text-center text-sm text-red-900"
+						>
+							{joinErrorMessage}
+						</span>
+					{/if}
+				</div>
 				<button
 					type="submit"
 					class="rounded-full border-4 border-red-800/80 bg-red-500/80 px-4 py-2 text-2xl font-bold tracking-wide text-white"
@@ -157,6 +183,44 @@
 			</form>
 		{:else}
 			<span class="text-center text-3xl">Waiting for game to start...</span>
+			{#if isRenaming}
+				<form onsubmit={onRenameSubmit} class="flex flex-col items-center gap-4">
+					<div class="flex flex-col items-center">
+						<input
+							name="name"
+							type="text"
+							placeholder="Enter Name"
+							maxlength="16"
+							class="rounded-lg border border-black px-2 py-1 text-center text-2xl"
+						/>
+						{#if renameErrorMessage}
+							<span
+								class="w-full rounded border border-red-900/60 bg-red-200/60 px-2 py-1 text-center text-sm text-red-900"
+								>{renameErrorMessage}</span
+							>
+						{/if}
+					</div>
+					<div class="flex gap-8">
+						<button
+							type="button"
+							class="rounded-full border border-black/50 px-4 py-2 text-lg font-bold tracking-wide text-black/80"
+							onclick={() => {
+								isRenaming = false;
+								renameErrorMessage = '';
+							}}>Cancel</button
+						>
+						<button
+							type="submit"
+							class="rounded-full border-4 border-red-800/80 bg-red-500/80 px-4 py-2 text-lg font-bold tracking-wide text-white"
+							>Submit</button
+						>
+					</div>
+				</form>
+			{:else}
+				<button onclick={() => (isRenaming = true)} class="rounded border border-black px-2 py-1"
+					>Rename?</button
+				>
+			{/if}
 		{/if}
 	{:else if game.status === 'beginning'}
 		<span class="text-center text-3xl">Game is beginning...</span>
@@ -192,5 +256,5 @@
 				onclick={onAnswerClick}>Answer</button
 			>
 		{/if}
-	{/if}
+	{:else if game.status === 'finished'}{/if}
 </div>
