@@ -196,9 +196,9 @@
 		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={reset}>Stop</button>
 	{/if}
 
-	<div class="flex w-full justify-center gap-8 border-y-2 border-black/40 px-4 py-1">
+	<div class="flex w-full justify-center gap-8 border-t-2 border-black/40 p-4 shadow-black/20">
 		{#each Object.entries(game.players) as [playerId, player]}
-			<div class="flex flex-col items-center">
+			<div class="flex flex-col items-center rounded px-4 py-1 shadow shadow-black/40">
 				<span class="text-lg">{player.name ? player.name : playerId}</span>
 				<span>Score: {player.points}</span>
 			</div>
