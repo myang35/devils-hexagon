@@ -12,7 +12,8 @@
 	}
 
 	async function onJoinGameClick() {
-		const response = await fetch(`${base}/api/game/${joinGameInputId}`);
+		const gameId = joinGameInputId.toUpperCase();
+		const response = await fetch(`${base}/api/game/${gameId}`);
 
 		if (!response.ok) {
 			joinGameMessage = 'Invalid Game ID!';
