@@ -144,7 +144,7 @@
 		message = 'Memorize!';
 		hexGrid.showSlots();
 		showTimer = true;
-		timer.start(3);
+		timer.start(30);
 		await timer.wait();
 
 		game = await Api.game.update(game.roomId, { status: 'answering' }).then((res) => res.json());
@@ -153,7 +153,7 @@
 		hexGrid.hideSlots();
 		hexGrid.enableSlots();
 		showTimer = true;
-		timer.start(20);
+		timer.start(90);
 		await timer.wait();
 
 		game = await Api.game.update(game.roomId, { status: 'finished' }).then((res) => res.json());
