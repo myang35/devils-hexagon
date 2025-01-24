@@ -1,7 +1,9 @@
-import { Player } from '$lib/server/models';
+import type { Player } from '$lib/server/models';
 
 export const playerRouter = {
 	create: async () => {
-		return new Player();
+		return {
+			id: crypto.randomUUID()
+		} as Player;
 	}
 };

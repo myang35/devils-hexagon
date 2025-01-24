@@ -4,7 +4,8 @@ import type { GameDto } from './game-dto';
 export const GameDtoUtil = {
 	fromGame(game: Game) {
 		return {
-			id: game.id,
+			id: game._id.toString(),
+			roomId: game.roomId,
 			status: game.status,
 			players: game.players,
 			gridValues: game.gridValues,

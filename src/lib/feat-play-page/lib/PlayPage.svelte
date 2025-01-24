@@ -4,7 +4,7 @@
 	import { Api } from '$lib/util-api';
 	import { NamedTimeout, Timer } from '$lib/util-basic';
 	import { faCheck, faX } from '@fortawesome/free-solid-svg-icons';
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import Fa from 'svelte-fa';
 
 	let { game }: { game: GameDto } = $props();
@@ -34,15 +34,15 @@
 
 	onMount(() => {
 		watchGameChanges();
-	});
 
-	onDestroy(() => {
-		NamedTimeout.clear('watchGameChanges');
-		reset();
+		return () => {
+			NamedTimeout.clear('watchGameChanges');
+			reset();
+		};
 	});
 
 	async function watchGameChanges() {
-		const updatedGame = await Api.game.get(game.id);
+		const updatedGame = (await Api.game.get(game.roomId).then((res) => res.json())) as GameDto;
 
 		if (updatedGame.lastModified !== game.lastModified) {
 			game = updatedGame;
@@ -132,7 +132,7 @@
 			return slots.map((slot) => slot.getValue());
 		})();
 
-		game = await Api.game.update(game.id, game);
+		game = await Api.game.update(game.roomId, game).then((res) => res.json());
 
 		message = 'Ready';
 		await wait(1);
@@ -140,14 +140,14 @@
 		message = 'Set';
 		await wait(1);
 
-		game = await Api.game.update(game.id, { status: 'memorizing' });
+		game = await Api.game.update(game.roomId, { status: 'memorizing' }).then((res) => res.json());
 		message = 'Memorize!';
 		hexGrid.showSlots();
 		showTimer = true;
 		timer.start(3);
 		await timer.wait();
 
-		game = await Api.game.update(game.id, { status: 'answering' });
+		game = await Api.game.update(game.roomId, { status: 'answering' }).then((res) => res.json());
 		message = 'Select 3 slots whose sum equals the target';
 		showTarget = true;
 		hexGrid.hideSlots();
@@ -156,7 +156,7 @@
 		timer.start(20);
 		await timer.wait();
 
-		game = await Api.game.update(game.id, { status: 'finished' });
+		game = await Api.game.update(game.roomId, { status: 'finished' }).then((res) => res.json());
 		message = 'Game Over!';
 		hexGrid.showSlots();
 		hexGrid.disableSlots();
@@ -173,7 +173,7 @@
 			player.isAnswering = false;
 		}
 		game.status = 'waiting';
-		game = await Api.game.update(game.id, game);
+		game = await Api.game.update(game.roomId, game).then((res) => res.json());
 		showTarget = false;
 		showTimer = false;
 		timer.stop();
@@ -186,7 +186,7 @@
 </script>
 
 <div class="flex flex-col items-center gap-4">
-	<h1>Game ID: {game.id}</h1>
+	<h1>Game ID: {game.roomId}</h1>
 
 	{#if game.status === 'waiting' || game.status === 'finished'}
 		<button class="w-min rounded border border-black/50 px-2 py-1" onclick={onStartClick}

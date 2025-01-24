@@ -9,7 +9,7 @@
 
 	let { game, player }: { game: GameDto; player: PlayerDto } = $props();
 
-	let hexGrid: HexGrid;
+	let hexGrid = $state<HexGrid>();
 	let clickedIndexes: number[] = [];
 	let otherPlayerAnswering = $derived(
 		Object.entries(game.players).some(([id, p]) => p.isAnswering && id !== player.id)
@@ -33,7 +33,7 @@
 	});
 
 	async function watchGameChanges() {
-		const updatedGame = await Api.game.get(game.id);
+		const updatedGame = (await Api.game.get(game.roomId).then((res) => res.json())) as GameDto;
 
 		if (updatedGame.lastModified !== game.lastModified) {
 			game = updatedGame;
@@ -54,14 +54,23 @@
 			return;
 		}
 
-		game = await Api.game.addPlayer(game.id, { id: player.id, name });
+		game = await Api.game.addPlayer(game.roomId, { id: player.id, name }).then((res) => res.json());
 	}
 
 	async function onAnswerClick() {
 		game.players[player.id].isAnswering = true;
-		game = await Api.game.update(game.id, game);
+		game = await Api.game.update(game.roomId, game).then((res) => res.json());
 
-		await wait(0); // wait for DOM to update
+		// wait for DOM to update
+		for (let i = 0; i < 10; i++) {
+			await wait(i * 100);
+			if (hexGrid) break;
+		}
+		if (!hexGrid) {
+			game.players[player.id].isAnswering = true;
+			game = await Api.game.update(game.roomId, game).then((res) => res.json());
+			return;
+		}
 
 		hexGrid.enableSlots();
 		hexGrid.getSlots().forEach((slot, i) => slot.setValue(game.gridValues[i]));
@@ -72,11 +81,13 @@
 		if (game.players[player.id].isAnswering) {
 			game.players[player.id].isAnswering = false;
 			game.players[player.id].points -= 1;
-			game = await Api.game.update(game.id, game);
+			game = await Api.game.update(game.roomId, game).then((res) => res.json());
 		}
 	}
 
 	async function onSlotClick(index: number) {
+		if (!hexGrid) return;
+
 		const slots = hexGrid.getSlots();
 		const clickedSlot = slots[index];
 
@@ -101,18 +112,18 @@
 				);
 				if (alreadyFound) {
 					game.players[player.id].points -= 1;
-					game = await Api.game.update(game.id, game);
+					game = await Api.game.update(game.roomId, game).then((res) => res.json());
 					wrongMessage = 'Already Found';
 					showWrong = true;
 				} else {
 					game.foundSolutions.push(clickedIndexes);
 					game.players[player.id].points += 1;
-					game = await Api.game.update(game.id, game);
+					game = await Api.game.update(game.roomId, game).then((res) => res.json());
 					showCorrect = true;
 				}
 			} else {
 				game.players[player.id].points -= 1;
-				game = await Api.game.update(game.id, game);
+				game = await Api.game.update(game.roomId, game).then((res) => res.json());
 				wrongMessage = '';
 				showWrong = true;
 			}
@@ -127,7 +138,10 @@
 					showCorrect = false;
 					showWrong = false;
 					game.players[player.id].isAnswering = false;
-					Api.game.update(game.id, game).then((updatedGame) => (game = updatedGame));
+					Api.game
+						.update(game.roomId, game)
+						.then((res) => res.json() as Promise<GameDto>)
+						.then((updatedGame) => (game = updatedGame));
 				},
 				1000
 			);
@@ -147,14 +161,14 @@
 		}
 
 		game.players[player.id].name = name;
-		game = await Api.game.update(game.id, game);
+		game = await Api.game.update(game.roomId, game).then((res) => res.json());
 
 		isRenaming = false;
 	}
 </script>
 
 <div class="flex flex-col items-center gap-4">
-	<span class="text-center">Game ID: {game.id}</span>
+	<span class="text-center">Game ID: {game.roomId}</span>
 
 	{#if game.status === 'waiting' || game.status === 'finished'}
 		{#if !game.players[player.id]}

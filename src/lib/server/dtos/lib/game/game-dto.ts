@@ -1,5 +1,6 @@
 export type GameDto = {
 	id: string;
+	roomId: string;
 	status: string;
 	players: {
 		[id: string]: {

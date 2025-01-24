@@ -1,7 +1,3 @@
-export class Player {
+export type Player = {
 	id: string;
-
-	constructor() {
-		this.id = crypto.randomUUID();
-	}
-}
+};

@@ -10,7 +10,7 @@ export const load = (async ({ url }) => {
 		error(400, 'Game ID is required');
 	}
 
-	const game = await db.game.get(gameId);
+	const game = await db.game.getByRoomId(gameId);
 
 	if (!game) {
 		error(404, 'Game not found');
