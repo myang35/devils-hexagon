@@ -58,8 +58,10 @@ export const gameRouter = {
 		const game = await dbRef.collection('games').findOneAndUpdate(
 			{ _id: new ObjectId(id) },
 			{
-				...body,
-				lastModified: new Date()
+				$set: {
+					...body,
+					lastModified: new Date()
+				}
 			}
 		);
 		return game as Game | null;

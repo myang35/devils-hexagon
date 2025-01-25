@@ -1,5 +1,6 @@
 import { db } from '$lib/server/database';
 import { GameDtoUtil } from '$lib/server/dtos';
+import { ObjectUtil } from '$lib/util-basic';
 import type { RequestHandler } from '../[roomId]/$types';
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -14,7 +15,17 @@ export const GET: RequestHandler = async ({ params }) => {
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	const body = await request.json();
-	const updatedGame = await db.game.updateByRoomId(params.roomId, body);
+	const updatedGame = await db.game.updateByRoomId(
+		params.roomId,
+		ObjectUtil.filterByKeys(body, [
+			'status',
+			'players',
+			'gridValues',
+			'selectedIndexes',
+			'foundSolutions',
+			'target'
+		])
+	);
 
 	if (!updatedGame) {
 		return Response.json({ error: 'NOT_FOUND', message: 'Game does not exist' }, { status: 404 });
