@@ -12,7 +12,7 @@ export const GameDtoUtil = {
 			selectedIndexes: game.selectedIndexes,
 			foundSolutions: game.foundSolutions,
 			target: game.target,
-			lastModified: game.lastModified
+			lastModified: game.lastModified.getTime()
 		} as GameDto;
 	}
 };

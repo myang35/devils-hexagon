@@ -34,7 +34,7 @@
 
 	async function watchGameChanges() {
 		const updatedGame = (await Api.game.get(game.roomId).then((res) => res.json())) as GameDto;
-
+		console.log('updatedGame:', updatedGame);
 		if (updatedGame.lastModified !== game.lastModified) {
 			game = updatedGame;
 		}

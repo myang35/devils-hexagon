@@ -28,7 +28,7 @@ export const gameRouter = {
 			selectedIndexes: [],
 			foundSolutions: [],
 			target: 0,
-			lastModified: Date.now()
+			lastModified: new Date()
 		};
 		const gamesCollection = dbRef.collection('games');
 		const gameDoc = await gamesCollection.insertOne(game);
@@ -59,7 +59,7 @@ export const gameRouter = {
 			{ _id: new ObjectId(id) },
 			{
 				...body,
-				lastModified: Date.now()
+				lastModified: new Date()
 			}
 		);
 		return game as Game | null;
@@ -88,7 +88,7 @@ export const gameRouter = {
 			{
 				$set: {
 					...body,
-					lastModified: Date.now()
+					lastModified: new Date()
 				}
 			}
 		);

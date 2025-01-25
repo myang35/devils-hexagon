@@ -16,5 +16,5 @@ export type Game = {
 	selectedIndexes: number[];
 	foundSolutions: number[][];
 	target: number;
-	lastModified: number;
+	lastModified: Date;
 };
